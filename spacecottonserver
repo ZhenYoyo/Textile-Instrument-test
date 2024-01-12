@@ -1,0 +1,131 @@
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
+#include <Wire.h>
+
+
+//BLE server name
+#define bleServerName "YOYOESP32"
+
+int sensordata1;
+int sensordata2;
+int sensordata3;
+
+unsigned long lastTime = 0;
+unsigned long timerDelay = 30;
+
+
+bool deviceConnected = false;
+
+
+#define SERVICE_UUID "91bad492-b950-4226-aa2b-4ede9fa42f59"
+
+BLECharacteristic sensordata1character("f78ebbff-c8b7-4107-93de-889a6a06d408", BLECharacteristic::PROPERTY_NOTIFY);
+BLEDescriptor sensordata1descriptor(BLEUUID((uint16_t)0x2902));
+
+BLECharacteristic sensordata2character("1f9aa0cc-0b03-4d3a-a347-9bab0081395d", BLECharacteristic::PROPERTY_NOTIFY);
+BLEDescriptor sensordata2descriptor(BLEUUID((uint16_t)0x2902));
+
+BLECharacteristic sensordata3character("e3f674f6-d6f6-4ac8-9cb8-3e96c2ec0106", BLECharacteristic::PROPERTY_NOTIFY);
+BLEDescriptor sensordata3descriptor(BLEUUID((uint16_t)0x2902));
+
+//Setup callbacks onConnect and onDisconnect
+class MyServerCallbacks: public BLEServerCallbacks {
+  void onConnect(BLEServer* pServer) {
+    deviceConnected = true;
+  };
+  void onDisconnect(BLEServer* pServer) {
+    deviceConnected = false;
+  }
+};
+
+
+
+void setup() {
+   
+  Serial.begin(115200);
+//Create a new BLE device with the BLE server name you’ve defined earlier:
+  BLEDevice::init(bleServerName);
+//Set the BLE device as a server and assign a callback function.
+  BLEServer *pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
+
+  // Create the BLE Service，can change the name of bmeService, just a variable for the pointer
+  BLEService *yoyoService = pServer->createService(SERVICE_UUID);
+
+
+  yoyoService->addCharacteristic(&sensordata1character);
+  sensordata1descriptor.setValue("SENSOR data1");
+  sensordata1character.addDescriptor(new BLE2902());
+  
+  yoyoService->addCharacteristic(&sensordata2character);
+  sensordata2descriptor.setValue("SENSOR data2");
+  sensordata2character.addDescriptor(new BLE2902());
+
+  yoyoService->addCharacteristic(&sensordata3character);
+  sensordata3descriptor.setValue("SENSOR data3");
+  sensordata3character.addDescriptor(new BLE2902());
+  
+  // Start the service
+  yoyoService->start();
+
+  // Start advertising
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pServer->getAdvertising()->start();
+  Serial.println("Waiting a client connection to notify...");
+}
+
+void loop() {
+  if (deviceConnected) {
+    if ((millis() - lastTime) > timerDelay) {
+      //get sensordata1
+      sensordata1 = analogRead(34);
+      static char sensordata1Temp[5];
+      itoa(sensordata1, sensordata1Temp, 10);
+
+      char dataToSend[5];
+      strncpy(dataToSend, sensordata1Temp, 4);
+      dataToSend[4] = '\0';  // 添加 null 结束符
+
+      sensordata1character.setValue(dataToSend);
+      sensordata1character.notify();
+
+      //get sensor data2
+
+      sensordata2 = analogRead(35);
+      static char sensordata2Temp[5];
+      itoa(sensordata2, sensordata2Temp, 10);
+
+      char dataToSend2[5];
+      strncpy(dataToSend2, sensordata2Temp, 4);
+      dataToSend2[4] = '\0';  // 添加 null 结束符
+
+      sensordata2character.setValue(dataToSend2);
+      sensordata2character.notify();
+
+      //get sensor data3 
+      sensordata3 = analogRead(33);
+      static char sensordata3Temp[5];
+      itoa(sensordata3, sensordata3Temp, 10);
+
+      char dataToSend3[5];
+      strncpy(dataToSend3, sensordata3Temp, 4);
+      dataToSend3[4] = '\0';  // 添加 null 结束符
+
+      sensordata3character.setValue(dataToSend3);
+      sensordata3character.notify();
+
+      Serial.print(" data1: ");
+      Serial.print(sensordata1);
+      Serial.print(" data2: ");
+      Serial.print(sensordata2);
+      Serial.print(" data3: ");
+      Serial.println(sensordata3);
+      
+
+      lastTime = millis();
+    }
+  }
+}
