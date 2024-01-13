@@ -1,0 +1,151 @@
+// The serviceUuid must match the serviceUuid of the device you would like to connect
+const serviceUuid = "19b10010-e8f2-537e-4f6c-d104768a1214";
+
+
+const characteristicsUUID = {
+  sensordata1: "f78ebbff-c8b7-4107-93de-889a6a06d408",
+  sensordata2: "1f9aa0cc-0b03-4d3a-a347-9bab0081395d",
+  sensordata3: "e3f674f6-d6f6-4ac8-9cb8-3e96c2ec0106"
+};
+
+let sensordata1Characteristic;
+let sensordata2Characteristic;
+let sensordata3Characteristic;
+
+
+
+const graphMargin = 40;
+const graphHeight = 300;
+const graphWidth = 500;
+
+
+let myValue1 = 0;
+let myValue2 = 0;
+let myValue3 = 0;
+let myBLE;
+
+function setup() {
+  colorMode(HSB, 255);
+  // Create a p5ble class
+  myBLE = new p5ble();
+
+  createCanvas(400, 400)
+  textSize(20);
+  textAlign(CENTER, CENTER);
+
+  // Create a 'Connect' button
+  const connectButton = createButton('Connect')
+  connectButton.mousePressed(connectToBle);
+}
+
+function connectToBle() {
+  // Connect to a device by passing the service UUID
+  myBLE.connect(serviceUuid, gotCharacteristics);
+}
+
+/*
+// A function that will be called once got characteristics
+function gotCharacteristics(error, characteristics) {
+  if (error) console.log('error: ', error);
+  console.log('characteristics: ', characteristics);
+  myCharacteristic = characteristics[0];
+  // Read the value of the first characteristic
+  myBLE.read(myCharacteristic, gotValue);
+}
+*/
+
+
+
+function gotCharacteristics(error, characteristics) {
+  if (error) console.log("error: ", error);
+  for (let i = 0; i < characteristics.length; i++) {
+    if (characteristics[i].uuid == characteristicsUUID.sensordata1) {
+      sensordata1Characteristic = characteristics[i];
+      //myBLE.startNotifications(sensordata1Characteristic, receivesensordata1);
+      myBLE.read(sensordata1Characteristic, gotValue1);
+    } else if (characteristics[i].uuid == characteristicsUUID.sensordata2) {
+      sensordata2Characteristic = characteristics[i];
+      //myBLE.startNotifications(sensordata2Characteristic, receivesensordata2);
+      myBLE.read(sensordata2Characteristic, gotValue2);
+    } else if (characteristics[i].uuid == characteristicsUUID.sensordata3) {
+      sensordata3Characteristic = characteristics[i];
+      //myBLE.startNotifications(sensordata3Characteristic, receivesensordata3);
+      myBLE.read(sensordata3Characteristic, gotValue3);
+    }
+  }
+}
+
+
+
+
+// A function that will be called once got values
+function gotValue1(error, value) {
+  if (error) console.log('error: ', error);
+  console.log('value1: ', value);
+  myValue1 = value;
+  //myValue1 = map(value, 0, 4095, 0, 255);
+  myBLE.read(sensordata1Characteristic, gotValue1);
+
+}
+
+
+function gotValue2(error, value) {
+  if (error) console.log('error: ', error);
+  console.log('value2: ', value);
+  myValue2 = value;
+  //myValue2 = map(value, 0, 1023, 0, 255);
+  myBLE.read(sensordata2Characteristic, gotValue2);
+}
+
+function gotValue3(error, value) {
+  if (error) console.log('error: ', error);
+  console.log('value3: ', value);
+  myValue3 = value;
+  // myValue3 = map(value, 0, 1023, 0, 255);
+  myBLE.read(sensordata3Characteristic, gotValue3);
+}
+
+
+/*function draw() {
+  background("#FFF");
+  textSize(20);
+  textAlign(CENTER, CENTER);
+  text("Sensor Data 1: " + myValue1, width / 2, height / 2 - 40);
+  text("Sensor Data 2: " + myValue2, width / 2, height / 2);
+  text("Sensor Data 3: " + myValue3, width / 2, height / 2 + 40);
+}*/
+
+function draw() {
+  background(0);
+  
+  // 绘制第一个圆形，代表myValue1
+  var circle1X = map(myValue1, 0, 255, 0, width);
+  var circle1Y = height / 2 - 40;
+  var circle1Size = 30;
+  fill("#FFEB3B"); // 设置第一个圆形的填充颜色为白色
+  stroke(255, 0, 0); // 设置第一个圆形的边框颜色为红色
+  ellipse(circle1X, circle1Y, circle1Size, circle1Size);
+  
+  // 绘制第二个圆形，代表myValue2
+  var circle2X = map(myValue2, 0, 255, 0, width);
+  var circle2Y = height / 2;
+  var circle2Size = 30 ;
+  fill("#00BCD4"); // 设置第二个圆形的填充颜色为白色
+  stroke(0, 255, 0); // 设置第二个圆形的边框颜色为绿色
+  ellipse(circle2X, circle2Y, circle2Size, circle2Size);
+  
+  // 绘制第三个圆形，代表myValue3
+  var circle3X = map(myValue3, 0, 255, 0, width);
+  var circle3Y = height / 2 + 40;
+  var circle3Size = 30;
+  fill("#FC89FFad"); // 设置第三个圆形的填充颜色为白色
+  stroke(0, 0, 255); // 设置第三个圆形的边框颜色为蓝色
+  ellipse(circle3X, circle3Y, circle3Size, circle3Size);
+  
+  // 显示传感器数据的文本
+  textSize(20);
+  textAlign(CENTER, CENTER);
+  text("Sensor Data 1: " + myValue1, width / 2, circle1Y);
+  text("Sensor Data 2: " + myValue2, width / 2, circle2Y);
+  text("Sensor Data 3: " + myValue3, width / 2, circle3Y);
+}
