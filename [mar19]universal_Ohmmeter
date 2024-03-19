@@ -1,0 +1,28 @@
+#一个用来测电阻的~arduino版本的欧姆表！
+
+int Vin=5;        //voltage at 5V pin of arduino
+float Vout=0;     //voltage at A0 pin of arduino
+float R1=3300;    //value of known resistance
+float R2=0;       //value of unknown resistance
+int a2d_data=0;    
+float buffer=0;   
+
+void setup() {
+  Serial.begin(115200);
+ 
+}
+
+void loop() {
+ 
+  a2d_data=analogRead(A0);
+  if(a2d_data)
+  {
+    buffer=a2d_data*Vin;
+    Vout=(buffer)/1024.0;
+    buffer=Vout/(Vin-Vout); 
+    R2=R1*buffer;
+    Serial.println(R2);
+    
+    delay(100);
+  }
+}
