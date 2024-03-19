@@ -1,0 +1,102 @@
+//用于esp32-p5js的连结
+
+#include <ArduinoBLE.h>
+
+BLEService sensorService("19B10010-E8F2-537E-4F6C-D104768A1214"); // create service
+
+
+BLEIntCharacteristic sensordata1character("f78ebbff-c8b7-4107-93de-889a6a06d408", BLERead | BLENotify);
+BLEIntCharacteristic sensordata2character("1f9aa0cc-0b03-4d3a-a347-9bab0081395d", BLERead | BLENotify);
+BLEIntCharacteristic sensordata3character("e3f674f6-d6f6-4ac8-9cb8-3e96c2ec0106", BLERead | BLENotify);
+
+int sensor1Value = 0;
+int sensorPin1 = 34;    // select the input pin for the potentiometer
+int sensor2Value = 0;
+int sensorPin2 = 35;    // select the input pin for the potentiometer
+int sensor3Value = 0;
+int sensorPin3 = 33;    // select the input pin for the potentiometer
+
+void setup() {
+  Serial.begin(115200);
+  while (!Serial);
+
+
+  // begin initialization
+  if (!BLE.begin()) {
+    Serial.println("starting BLE failed!");
+
+    while (1);
+  }
+
+  // set the local name peripheral advertises
+  BLE.setLocalName("ESPserverYOYO");
+  // set the UUID for the service this peripheral advertises:
+  BLE.setAdvertisedService(sensorService);
+
+  // add the characteristics to the service
+  //ledService.addCharacteristic(ledCharacteristic);
+  sensorService.addCharacteristic(sensordata1character);
+  sensorService.addCharacteristic(sensordata2character);
+  sensorService.addCharacteristic(sensordata3character);
+  
+
+  // add the service
+  BLE.addService(sensorService);
+
+  //ledCharacteristic.writeValue(0);
+  sensordata1character.writeValue(0);
+  sensordata2character.writeValue(0);
+  sensordata3character.writeValue(0);
+
+  // start advertising
+  BLE.advertise();
+
+  Serial.println("Bluetooth device active, waiting for connections...");
+}
+
+void loop() {
+  // poll for BLE events
+  BLE.poll();
+
+  // read the value from the sensor:
+ int sensor1Value;
+ if (analogRead(sensorPin1)> 300){
+  sensor1Value = 300;
+ }
+ else{
+  sensor1Value = analogRead(sensorPin1);
+ }
+       
+  int sensor2Value;
+  if (analogRead(sensorPin2)> 1000){
+    sensor2Value = 1000;
+  }
+  else{
+   sensor2Value= analogRead(sensorPin2);
+  }
+  
+  int sensor3Value;
+  if(analogRead(sensorPin3)>1000){
+    sensor3Value = 1000;
+  }
+  else{
+    sensor3Value = analogRead(sensorPin3);
+  }
+  
+  int sensor1ValueSend = map(sensor1Value,0,300,0,255);
+  int sensor2ValueSend = map(sensor2Value,0,1000,0,255);
+  int sensor3ValueSend = map(sensor3Value,0,1000,0,255);
+  //int sensor3Value = map(analogRead(sensorPin3),0,2000,0,255);
+  sensordata1character.writeValue(sensor1ValueSend);
+  sensordata2character.writeValue(sensor2ValueSend);
+  sensordata3character.writeValue(sensor3ValueSend);
+  
+  Serial.print(" data1: ");
+  Serial.print(analogRead(sensorPin1));
+  Serial.print(" data2: ");
+  Serial.print(analogRead(sensorPin2));
+  Serial.print(" data3: ");
+  Serial.println(analogRead(sensorPin3));
+
+  delay(20);
+}
